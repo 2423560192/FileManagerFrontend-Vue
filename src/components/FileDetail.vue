@@ -7,7 +7,21 @@
       </button>
     </div>
     
-    <div class="content-card">
+    <!-- 加载状态 -->
+    <div v-if="loading" class="loading-state">
+      <div class="loading-spinner"></div>
+      <span>加载中...</span>
+    </div>
+    
+    <!-- 错误状态 -->
+    <div v-else-if="error" class="error-state">
+      <span class="error-icon">⚠️</span>
+      <p>{{ error }}</p>
+      <button @click="fetchFileDetail" class="retry-btn">重试</button>
+    </div>
+    
+    <!-- 文件内容 -->
+    <div v-else class="content-card">
       <div class="file-header">
         <h2 class="file-title">
           <span class="file-icon">📄</span>
@@ -16,7 +30,7 @@
         <div class="file-meta">
           <span class="meta-item">
             <span class="meta-icon">📏</span>
-            大小：{{ file.size }} B
+            大小：{{ formatFileSize(file.size) }}
           </span>
           <span class="meta-item">
             <span class="meta-icon">🔒</span>
@@ -44,6 +58,8 @@ export default {
   name: 'FileDetail',
   data() {
     return {
+      loading: true,
+      error: '',
       file: {
         filename: '',
         content: '',
@@ -53,7 +69,40 @@ export default {
       }
     }
   },
+  computed: {
+    // 计算文件内容的实际大小
+    fileSize() {
+      if (!this.file.content) return 0
+      // 使用 TextEncoder 计算字符串的字节长度
+      return new TextEncoder().encode(this.file.content).length
+    }
+  },
+  created() {
+    this.fetchFileDetail()
+  },
   methods: {
+    async fetchFileDetail() {
+      this.loading = true
+      this.error = ''
+      
+      try {
+        const fileId = this.$route.params.id
+        const response = await this.$axios.get(`/file/${fileId}`)
+        
+        if (response.data.success) {
+          this.file = response.data.file
+          // 更新文件大小
+          this.file.size = this.fileSize
+        } else {
+          this.error = response.data.message || '获取文件详情失败'
+        }
+      } catch (error) {
+        console.error('获取文件详情失败:', error)
+        this.error = error.response?.data?.message || '获取文件详情失败，请稍后再试'
+      } finally {
+        this.loading = false
+      }
+    },
     goBack() {
       this.$router.push('/files')
     },
@@ -69,8 +118,21 @@ export default {
       return new Date(date).toLocaleString('zh-CN')
     },
     formatContent(content) {
-      // 每50个字符换行
-      return content.replace(/(.{50})/g, '$1\n')
+      return content?.replace(/(.{50})/g, '$1\n') || ''
+    },
+    formatFileSize(size) {
+      if (!size) return '0 B'
+      
+      const units = ['B', 'KB', 'MB', 'GB', 'TB']
+      let index = 0
+      let fileSize = size
+      
+      while (fileSize >= 1024 && index < units.length - 1) {
+        fileSize /= 1024
+        index++
+      }
+      
+      return `${fileSize.toFixed(2)} ${units[index]}`
     }
   }
 }
@@ -191,6 +253,54 @@ export default {
   
   .content-viewer {
     max-height: 300px;
+  }
+}
+
+/* 添加加载和错误状态样式 */
+.loading-state, .error-state {
+  text-align: center;
+  padding: 3rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(52, 152, 219, 0.1);
+  border-radius: 50%;
+  border-top-color: #3498db;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+.error-icon {
+  font-size: 3rem;
+  color: #e74c3c;
+  margin-bottom: 1rem;
+  display: block;
+}
+
+.retry-btn {
+  margin-top: 1rem;
+  background: #3498db;
+  color: white;
+  border: none;
+  padding: 0.8rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.retry-btn:hover {
+  background: #2980b9;
+  transform: translateY(-2px);
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 </style>
