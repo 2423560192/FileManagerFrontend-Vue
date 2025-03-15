@@ -31,10 +31,13 @@ export default new Vuex.Store({
       })
     },
     logout({ commit }) {
-      commit('setLoginState', { 
-        status: false, 
-        username: '',
-        userId: null
+      return new Promise((resolve) => {
+        commit('setLoginState', { 
+          status: false, 
+          username: '',
+          userId: null
+        })
+        resolve()
       })
     }
   }

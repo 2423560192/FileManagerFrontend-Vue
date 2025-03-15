@@ -47,8 +47,18 @@ export default {
   methods: {
     ...mapActions(['logout']),
     async handleLogout() {
-      await this.logout()
-      this.$router.push('/login')
+      try {
+        await this.logout()
+        // 强制刷新路由守卫
+        await this.$router.replace({ 
+          name: 'Login',
+          replace: true
+        })
+        // 强制刷新页面以确保状态完全清除
+        window.location.reload()
+      } catch (error) {
+        console.error('退出登录失败:', error)
+      }
     }
   }
 }

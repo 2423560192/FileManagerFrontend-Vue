@@ -1,35 +1,45 @@
 import Vue from 'vue'
+import ElementUI from 'element-ui'
+import 'element-ui/lib/theme-chalk/index.css'
 import App from './App.vue'
 import router from './router'
 import store from './store'
 import axios from 'axios'
 
+Vue.use(ElementUI)
+
 Vue.config.productionTip = false
 
 // 配置全局Axios，直接指向后端API地址
-axios.defaults.baseURL = 'http://localhost:8080/api'
+axios.defaults.baseURL = 'http://localhost:8000/api'
 Vue.prototype.$axios = axios
 
-// 路由守卫，检查是否已登录
+// 路由守卫
 router.beforeEach((to, from, next) => {
-  const isLoggedIn = store.state.isLoggedIn
+  const isLoggedIn = !!localStorage.getItem('userId') // 直接从 localStorage 获取登录状态
+  store.state.isLoggedIn = isLoggedIn // 同步 store 状态
   
-  // 如果是登录或注册页面
-  if (to.path === '/login' || to.path === '/register') {
-    if (isLoggedIn) {
-      // 已登录时访问登录/注册页面，重定向到文件列表
-      next({ path: '/files', replace: true })
+  // 定义需要登录才能访问的路由
+  const requiresAuth = !['Login', 'Register'].includes(to.name)
+  
+  if (requiresAuth) {
+    // 需要登录的页面
+    if (!isLoggedIn) {
+      next({ 
+        name: 'Login',
+        replace: true
+      })
     } else {
-      // 未登录时允许访问登录/注册页面
       next()
     }
   } else {
-    // 访问其他页面时检查登录状态
-    if (!isLoggedIn) {
-      // 未登录时重定向到登录页面
-      next({ path: '/login', replace: true })
+    // 登录/注册页面
+    if (isLoggedIn) {
+      next({ 
+        name: 'FileList',
+        replace: true
+      })
     } else {
-      // 已登录允许访问
       next()
     }
   }

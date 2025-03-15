@@ -281,31 +281,39 @@ export default {
   methods: {
     async register() {
       if (this.password !== this.confirmPassword) {
-        this.error = '两次输入的密码不一致';
-        return;
+        this.error = '两次输入的密码不一致'
+        return
       }
       
-      this.loading = true;
-      this.error = '';
+      this.loading = true
+      this.error = ''
       
       try {
         const response = await this.$axios.post('/user/register', {
           username: this.username,
           password: this.password
-        });
+        })
         
         if (response.data.success) {
-          // 注册成功后自动登录
-          localStorage.setItem('userId', response.data.userId);
-          this.$router.push('/files');
+          // 使用 Element UI 的 Message 组件显示成功提示
+          this.$message({
+            message: '注册成功！正在跳转到登录页面...',
+            type: 'success',
+            duration: 1500
+          })
+          
+          // 延迟跳转，让用户看到提示
+          setTimeout(() => {
+            this.$router.replace({ name: 'Login' })
+          }, 1500)
         } else {
-          this.error = response.data.message || '注册失败，请稍后再试';
+          this.error = response.data.message || '注册失败'
         }
       } catch (error) {
-        console.error('注册失败:', error);
-        this.error = error.response?.data?.message || '注册失败，请稍后再试';
+        console.error('注册失败:', error)
+        this.error = error.response?.data?.message || '注册失败，请稍后再试'
       } finally {
-        this.loading = false;
+        this.loading = false
       }
     }
   }
