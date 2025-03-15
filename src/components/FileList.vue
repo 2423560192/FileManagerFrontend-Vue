@@ -226,7 +226,7 @@
       <div v-if="openedFile" class="file-modal">
         <div class="file-modal-content card">
           <div class="file-modal-header">
-            <h3>{{ openedFile.filename }}</h3>
+            <h3 style="color: aqua;">{{ openedFile.filename }}</h3>
             <button class="close-modal-btn" @click="closeOpenedFile">×</button>
           </div>
           

@@ -12,22 +12,24 @@ Vue.prototype.$axios = axios
 
 // 路由守卫，检查是否已登录
 router.beforeEach((to, from, next) => {
-  console.log('路由跳转:', { from: from.path, to: to.path });
   const isLoggedIn = store.state.isLoggedIn
   
-  // 如果要去登录或注册页面
+  // 如果是登录或注册页面
   if (to.path === '/login' || to.path === '/register') {
-    // 如果已登录，重定向到文件列表页
     if (isLoggedIn) {
-      next('/files')
+      // 已登录时访问登录/注册页面，重定向到文件列表
+      next({ path: '/files', replace: true })
     } else {
+      // 未登录时允许访问登录/注册页面
       next()
     }
   } else {
-    // 如果要去其他页面，检查是否登录
+    // 访问其他页面时检查登录状态
     if (!isLoggedIn) {
-      next('/login')
+      // 未登录时重定向到登录页面
+      next({ path: '/login', replace: true })
     } else {
+      // 已登录允许访问
       next()
     }
   }
