@@ -85,32 +85,19 @@ export default {
           password: this.password
         });
         
-        // 检查API返回的success字段
         if (response.data.success) {
-          // 登录成功，保存userId到localStorage
-          localStorage.setItem('userId', response.data.userId);
-          localStorage.setItem('username', this.username);
-          // 触发登录状态变化
-          this.$root.eventBus.$emit('auth-change', true);
+          // 使用实际的userId
+          await this.$store.dispatch('login', {
+            username: this.username,
+            userId: response.data.userId
+          });
           this.$router.push('/files');
         } else {
-          // API返回了success=false
-          this.error = response.data.message || '登录失败，请检查用户名和密码';
+          this.error = response.data.message || '登录失败';
         }
       } catch (error) {
-        console.error('登录错误:', error);
-        // 详细错误日志
-        if (error.response) {
-          console.error('错误状态:', error.response.status);
-          console.error('错误数据:', error.response.data);
-          this.error = error.response.data.message || '登录失败，服务器错误';
-        } else if (error.request) {
-          console.error('没有收到响应');
-          this.error = '无法连接到服务器，请检查网络连接';
-        } else {
-          console.error('请求错误:', error.message);
-          this.error = '登录请求错误';
-        }
+        console.error('登录失败:', error);
+        this.error = error.response?.data?.message || '登录失败，请稍后再试';
       } finally {
         this.loading = false;
       }

@@ -12,7 +12,7 @@
             <span class="user-icon">👤</span>
             <span class="username">{{ username }}</span>
           </div>
-          <button @click="logout" class="logout-btn">
+          <button @click="handleLogout" class="logout-btn">
             <span class="logout-icon">🚪</span>
             退出登录
           </button>
@@ -37,32 +37,17 @@
 </template>
 
 <script>
-import { eventBus } from './main'
+import { mapState, mapActions } from 'vuex'
 
 export default {
   name: 'App',
-  data() {
-    return {
-      isLoggedIn: !!localStorage.getItem('userId')
-    }
-  },
   computed: {
-    username() {
-      return localStorage.getItem('username') || '用户';
-    }
-  },
-  created() {
-    // 监听登录状态变化
-    eventBus.$on('auth-change', (status) => {
-      this.isLoggedIn = status
-    })
+    ...mapState(['isLoggedIn', 'username'])
   },
   methods: {
-    logout() {
-      localStorage.removeItem('userId')
-      localStorage.removeItem('username')
-      // 触发登录状态变化
-      eventBus.$emit('auth-change', false)
+    ...mapActions(['logout']),
+    async handleLogout() {
+      await this.logout()
       this.$router.push('/login')
     }
   }

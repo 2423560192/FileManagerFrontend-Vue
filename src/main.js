@@ -1,6 +1,7 @@
 import Vue from 'vue'
 import App from './App.vue'
 import router from './router'
+import store from './store'
 import axios from 'axios'
 
 Vue.config.productionTip = false
@@ -12,7 +13,7 @@ Vue.prototype.$axios = axios
 // 路由守卫，检查是否已登录
 router.beforeEach((to, from, next) => {
   console.log('路由跳转:', { from: from.path, to: to.path });
-  const isLoggedIn = localStorage.getItem('userId')
+  const isLoggedIn = store.state.isLoggedIn
   
   // 如果要去登录或注册页面
   if (to.path === '/login' || to.path === '/register') {
@@ -35,6 +36,7 @@ router.beforeEach((to, from, next) => {
 // 创建Vue实例时使用事件总线
 const app = new Vue({
   router,
+  store,
   data: {
     // 添加事件总线
     eventBus: new Vue()
