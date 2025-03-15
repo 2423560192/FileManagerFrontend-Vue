@@ -1,53 +1,51 @@
 <template>
   <div class="login-container">
-    <div class="login-card card">
-      <h2>文件管理系统登录</h2>
-      <form @submit.prevent="login">
+    <div class="login-card">
+      <div class="login-header">
+        <div class="logo">📁</div>
+        <h2>文件管理系统</h2>
+        <p class="subtitle">请登录您的账号</p>
+      </div>
+      
+      <form @submit.prevent="login" class="login-form">
         <div class="form-group">
-          <label for="username">用户名</label>
           <div class="input-wrapper">
+            <i class="icon">👤</i>
             <input 
-              id="username" 
               v-model="username" 
               type="text" 
-              placeholder="请输入用户名" 
+              placeholder="请输入用户名"
               required
             />
-            <span class="input-icon">👤</span>
           </div>
         </div>
         
         <div class="form-group">
-          <label for="password">密码</label>
           <div class="input-wrapper">
+            <i class="icon">🔒</i>
             <input 
-              id="password" 
               v-model="password" 
               type="password" 
-              placeholder="请输入密码" 
+              placeholder="请输入密码"
               required
             />
-            <span class="input-icon">🔒</span>
           </div>
         </div>
         
-        <div class="error" v-if="error">{{ error }}</div>
+        <div v-if="error" class="error">{{ error }}</div>
         
-        <button type="submit" class="login-btn" :disabled="loading">
-          {{ loading ? '登录中...' : '登录' }}
+        <button type="submit" :disabled="loading" class="login-btn">
+          <span class="btn-content">
+            <span v-if="loading" class="loading-spinner"></span>
+            {{ loading ? '登录中...' : '登录' }}
+          </span>
         </button>
+        
+        <div class="register-link">
+          <span>还没有账号？</span>
+          <router-link to="/register" class="register-btn">立即注册</router-link>
+        </div>
       </form>
-      
-      <div class="register-section">
-        <span>没有账号？</span>
-        <a 
-          href="javascript:void(0)" 
-          class="register-link-btn"
-          @click="goToRegister"
-        >
-          注册新账号
-        </a>
-      </div>
     </div>
   </div>
 </template>
@@ -92,6 +90,8 @@ export default {
           // 登录成功，保存userId到localStorage
           localStorage.setItem('userId', response.data.userId);
           localStorage.setItem('username', this.username);
+          // 触发登录状态变化
+          this.$root.eventBus.$emit('auth-change', true);
           this.$router.push('/files');
         } else {
           // API返回了success=false
@@ -171,76 +171,97 @@ export default {
 
 <style scoped>
 .login-container {
+  min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 100vh;
-  background: linear-gradient(135deg, #6e8efb, #a777e3);
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  padding: 1rem;
 }
 
 .login-card {
   width: 100%;
   max-width: 400px;
-  padding: 2rem;
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 15px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transform: translateY(0);
+  transition: transform 0.3s ease;
 }
 
-.login-card h2 {
-  margin-bottom: 2rem;
+.login-card:hover {
+  transform: translateY(-5px);
+}
+
+.login-header {
   text-align: center;
-  color: #2c3e50;
-  font-size: 1.8rem;
+  padding: 2rem;
+  background: linear-gradient(135deg, #2c3e50, #3498db);
+  color: white;
 }
 
-.form-group {
-  margin-bottom: 1.5rem;
+.logo {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  animation: float 3s ease-in-out infinite;
+}
+
+.subtitle {
+  color: rgba(255, 255, 255, 0.8);
+  margin-top: 0.5rem;
+}
+
+.login-form {
+  padding: 2rem;
 }
 
 .input-wrapper {
   position: relative;
+  margin-bottom: 1.5rem;
 }
 
-.input-icon {
+.icon {
   position: absolute;
-  right: 12px;
+  left: 1rem;
   top: 50%;
   transform: translateY(-50%);
-  font-size: 1.2rem;
+  font-style: normal;
+  color: #94a3b8;
 }
 
 input {
   width: 100%;
-  padding: 12px 40px 12px 15px;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
+  padding: 1rem 1rem 1rem 3rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
   font-size: 1rem;
   transition: all 0.3s ease;
 }
 
 input:focus {
-  border-color: #6e8efb;
-  box-shadow: 0 0 0 3px rgba(110, 142, 251, 0.1);
-  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
 }
 
 .login-btn {
   width: 100%;
-  padding: 12px;
-  background: linear-gradient(135deg, #6e8efb, #a777e3);
+  padding: 1rem;
+  background: linear-gradient(135deg, #3498db, #2980b9);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
 }
 
 .login-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(110, 142, 251, 0.2);
+  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
 }
 
 .login-btn:disabled {
@@ -248,39 +269,68 @@ input:focus {
   cursor: not-allowed;
 }
 
-.error {
-  color: #e74c3c;
-  margin: 1rem 0;
-  padding: 10px;
-  background: rgba(231, 76, 60, 0.1);
-  border-radius: 6px;
+.btn-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
-.register-section {
+.loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 1s linear infinite;
+}
+
+.register-link {
   margin-top: 1.5rem;
   text-align: center;
-  padding-top: 1rem;
-  border-top: 1px solid #eee;
+  color: #64748b;
 }
 
-.register-section span {
-  color: #666;
-  margin-right: 0.5rem;
-}
-
-.register-link-btn {
-  color: #ff4081;
+.register-btn {
+  color: #3498db;
   text-decoration: none;
   font-weight: 600;
-  padding: 4px 12px;
-  border: 2px solid #ff4081;
-  border-radius: 4px;
-  transition: all 0.3s ease;
-  cursor: pointer;
+  margin-left: 0.5rem;
+  transition: color 0.3s ease;
 }
 
-.register-link-btn:hover {
-  background-color: #ff4081;
-  color: white;
+.register-btn:hover {
+  color: #2980b9;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.error {
+  background: rgba(231, 76, 60, 0.1);
+  color: #e74c3c;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.error::before {
+  content: "⚠️";
 }
 </style> 

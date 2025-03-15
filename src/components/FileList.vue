@@ -1,24 +1,62 @@
 <template>
   <div class="file-list">
-    <h2>我的文件</h2>
+    <!-- 页面标题和统计信息 -->
+    <div class="page-header">
+      <div class="header-content">
+        <h2>我的文件</h2>
+        <div class="file-stats">
+          <div class="stat-item">
+            <span class="stat-icon">📄</span>
+            <span class="stat-value">{{ files.length }}</span>
+            <span class="stat-label">个文件</span>
+          </div>
+        </div>
+      </div>
+    </div>
     
     <!-- 创建新文件表单 -->
-    <div class="card">
-      <h3>创建新文件</h3>
+    <div class="card create-file-card">
+      <div class="card-header">
+        <h3>
+          <span class="card-icon">✨</span>
+          创建新文件
+        </h3>
+      </div>
+      
       <form @submit.prevent="createFile">
-        <div class="form-group">
-          <label for="filename">文件名</label>
-          <input 
-            id="filename" 
-            v-model="newFile.filename" 
-            type="text" 
-            placeholder="请输入文件名" 
-            required
-          />
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="filename">
+              <span class="label-icon">📝</span>
+              文件名
+            </label>
+            <input 
+              id="filename" 
+              v-model="newFile.filename" 
+              type="text" 
+              placeholder="请输入文件名" 
+              required
+            />
+          </div>
+          
+          <div class="form-group">
+            <label for="permission">
+              <span class="label-icon">🔒</span>
+              文件权限
+            </label>
+            <select id="permission" v-model="newFile.permission" required>
+              <option value="read">只读</option>
+              <option value="write">只写</option>
+              <option value="readwrite">读写</option>
+            </select>
+          </div>
         </div>
         
         <div class="form-group">
-          <label for="content">文件内容</label>
+          <label for="content">
+            <span class="label-icon">📄</span>
+            文件内容
+          </label>
           <textarea 
             id="content" 
             v-model="newFile.content" 
@@ -27,39 +65,44 @@
           ></textarea>
         </div>
         
-        <div class="form-group">
-          <label for="permission">文件权限</label>
-          <select id="permission" v-model="newFile.permission" required>
-            <option value="read">只读</option>
-            <option value="write">只写</option>
-            <option value="readwrite">读写</option>
-          </select>
-        </div>
-        
         <div class="error" v-if="createError">{{ createError }}</div>
         <div class="success" v-if="createSuccess">{{ createSuccess }}</div>
         
-        <button type="submit" :disabled="creating">
-          {{ creating ? '创建中...' : '创建文件' }}
+        <button type="submit" :disabled="creating" class="create-btn">
+          <span class="btn-content">
+            <span v-if="creating" class="loading-spinner"></span>
+            {{ creating ? '创建中...' : '创建文件' }}
+          </span>
         </button>
       </form>
     </div>
     
     <!-- 文件列表 -->
     <div class="card file-table-card">
-      <h3>文件列表</h3>
-      <div v-if="loading" class="loading">加载中...</div>
+      <div class="card-header">
+        <h3>
+          <span class="card-icon">📋</span>
+          文件列表
+        </h3>
+      </div>
       
-      <div v-else-if="error" class="error">
-        {{ error }}
+      <div v-if="loading" class="loading-state">
+        <div class="loading-spinner"></div>
+        <span>加载中...</span>
+      </div>
+      
+      <div v-else-if="error" class="error-state">
+        <span class="error-icon">⚠️</span>
+        <p>{{ error }}</p>
         <button @click="fetchFiles" class="retry-btn">重试</button>
       </div>
       
-      <div v-else-if="files.length === 0" class="empty-list">
-        您还没有创建任何文件
+      <div v-else-if="files.length === 0" class="empty-state">
+        <span class="empty-icon">📭</span>
+        <p>您还没有创建任何文件</p>
       </div>
       
-      <div v-else>
+      <div v-else class="table-container">
         <table>
           <thead>
             <tr>
@@ -72,30 +115,45 @@
           </thead>
           <tbody>
             <tr v-for="file in files" :key="file.id">
-              <td>{{ file.filename }}</td>
+              <td class="filename-cell">
+                <span class="file-icon">📄</span>
+                {{ file.filename }}
+              </td>
               <td>{{ formatFileSize(file) }}</td>
-              <td>{{ translatePermission(file.permission) }}</td>
+              <td>
+                <span class="permission-tag" :class="file.permission">
+                  {{ translatePermission(file.permission) }}
+                </span>
+              </td>
               <td>{{ formatDate(file.createTime) }}</td>
               <td class="actions">
-                <button @click="viewFile(file.id)" class="view-btn">查看</button>
-                <button @click="editFile(file)" class="edit-btn">修改</button>
+                <button @click="viewFile(file.id)" class="action-btn view-btn" title="查看">
+                  👁️
+                </button>
+                <button @click="editFile(file)" class="action-btn edit-btn" title="修改">
+                  ✏️
+                </button>
                 <button 
                   v-if="!file.isOpen" 
                   @click="openFile(file)" 
-                  class="open-btn"
+                  class="action-btn open-btn"
                   :disabled="opening === file.id"
+                  title="打开"
                 >
-                  {{ opening === file.id ? '打开中...' : '打开' }}
+                  📂
                 </button>
                 <button 
                   v-else 
                   @click="closeFile(file)" 
-                  class="close-btn"
+                  class="action-btn close-btn"
                   :disabled="closing === file.id"
+                  title="关闭"
                 >
-                  {{ closing === file.id ? '关闭中...' : '关闭' }}
+                  📁
                 </button>
-                <button @click="confirmDelete(file)" class="delete-btn">删除</button>
+                <button @click="confirmDelete(file)" class="action-btn delete-btn" title="删除">
+                  🗑️
+                </button>
               </td>
             </tr>
           </tbody>
@@ -104,17 +162,19 @@
     </div>
     
     <!-- 删除确认对话框 -->
-    <div v-if="showDeleteConfirm" class="delete-modal">
-      <div class="delete-modal-content card">
-        <h3>确认删除</h3>
-        <p>您确定要删除文件 <strong>{{ selectedFile.filename }}</strong> 吗？</p>
-        <p class="warning">此操作不可撤销！</p>
-        <div class="modal-actions">
-          <button @click="deleteFile" class="confirm-delete">确认删除</button>
-          <button @click="showDeleteConfirm = false" class="cancel-delete">取消</button>
+    <transition name="fade">
+      <div v-if="showDeleteConfirm" class="delete-modal">
+        <div class="delete-modal-content card">
+          <h3>确认删除</h3>
+          <p>您确定要删除文件 <strong>{{ selectedFile.filename }}</strong> 吗？</p>
+          <p class="warning">此操作不可撤销！</p>
+          <div class="modal-actions">
+            <button @click="deleteFile" class="confirm-delete">确认删除</button>
+            <button @click="showDeleteConfirm = false" class="cancel-delete">取消</button>
+          </div>
         </div>
       </div>
-    </div>
+    </transition>
     
     <!-- 添加修改文件的模态框 -->
     <div v-if="showEditModal" class="modal">
@@ -162,24 +222,26 @@
     </div>
     
     <!-- 添加打开文件的模态框 -->
-    <div v-if="openedFile" class="file-modal">
-      <div class="file-modal-content card">
-        <div class="file-modal-header">
-          <h3>{{ openedFile.filename }}</h3>
-          <button class="close-modal-btn" @click="closeOpenedFile">×</button>
-        </div>
-        
-        <div class="file-info-bar">
-          <span>大小: {{ formatFileSize(openedFile) }}</span>
-          <span>权限: {{ translatePermission(openedFile.permission) }}</span>
-          <span>创建时间: {{ formatDate(openedFile.createTime) }}</span>
-        </div>
-        
-        <div class="file-content-viewer">
-          <pre>{{ openedFile.content }}</pre>
+    <transition name="fade">
+      <div v-if="openedFile" class="file-modal">
+        <div class="file-modal-content card">
+          <div class="file-modal-header">
+            <h3>{{ openedFile.filename }}</h3>
+            <button class="close-modal-btn" @click="closeOpenedFile">×</button>
+          </div>
+          
+          <div class="file-info-bar">
+            <span>大小: {{ formatFileSize(openedFile) }}</span>
+            <span>权限: {{ translatePermission(openedFile.permission) }}</span>
+            <span>创建时间: {{ formatDate(openedFile.createTime) }}</span>
+          </div>
+          
+          <div class="file-content-viewer">
+            <pre>{{ openedFile.content }}</pre>
+          </div>
         </div>
       </div>
-    </div>
+    </transition>
   </div>
 </template>
 
@@ -473,37 +535,203 @@ export default {
 </script>
 
 <style scoped>
-.file-list h2 {
-  margin-bottom: 1.5rem;
-}
-
-.file-table-card {
-  margin-top: 2rem;
-}
-
-.loading, .empty-list {
-  text-align: center;
+.file-list {
+  max-width: 1200px;
+  margin: 0 auto;
   padding: 2rem;
-  color: #7f8c8d;
+}
+
+.page-header {
+  margin-bottom: 2rem;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-content h2 {
+  font-size: 2rem;
+  color: #2c3e50;
+  margin: 0;
+}
+
+.file-stats {
+  display: flex;
+  gap: 2rem;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.stat-icon {
+  font-size: 1.5rem;
+}
+
+.stat-value {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.stat-label {
+  color: #64748b;
+}
+
+.card {
+  margin-bottom: 2rem;
+}
+
+.card-header {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #edf2f7;
+}
+
+.card-header h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 1.5rem;
+  color: #2c3e50;
+}
+
+.card-icon {
+  font-size: 1.5rem;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.label-icon {
+  margin-right: 0.5rem;
+}
+
+.create-btn {
+  background: linear-gradient(135deg, #2ecc71, #27ae60);
+  width: 100%;
+}
+
+.table-container {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-spacing: 0;
+  border-collapse: separate;
+}
+
+.filename-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.file-icon {
+  font-size: 1.2rem;
+}
+
+.permission-tag {
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.permission-tag.read {
+  background: rgba(52, 152, 219, 0.1);
+  color: #3498db;
+}
+
+.permission-tag.write {
+  background: rgba(46, 204, 113, 0.1);
+  color: #2ecc71;
+}
+
+.permission-tag.readwrite {
+  background: rgba(155, 89, 182, 0.1);
+  color: #9b59b6;
 }
 
 .actions {
   display: flex;
-  gap: 0.3rem;
-  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
 }
 
-.actions button {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.9rem;
+.action-btn {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  font-size: 1.2rem;
+  border-radius: 50%;
+  background: white;
+  border: 2px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
 }
 
-.view-btn {
-  background-color: #3498db;
+.action-btn:hover {
+  transform: translateY(-2px);
+  border-color: #3498db;
 }
 
-.delete-btn {
-  background-color: #e74c3c;
+.loading-state, .error-state, .empty-state {
+  text-align: center;
+  padding: 3rem;
+  color: #64748b;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(52, 152, 219, 0.1);
+  border-radius: 50%;
+  border-top-color: #3498db;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+.error-icon, .empty-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  display: block;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 768px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .file-stats {
+    display: none;
+  }
+  
+  .actions {
+    flex-wrap: wrap;
+  }
 }
 
 .delete-modal {
@@ -711,60 +939,84 @@ th {
   display: flex;
   flex-direction: column;
   background: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
 }
 
 .file-modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 1.5rem;
+  padding: 1.2rem;
   border-bottom: 1px solid #eee;
+  background: linear-gradient(135deg, #2c3e50, #3498db);
+  color: white;
+  border-radius: 12px 12px 0 0;
 }
 
 .file-modal-header h3 {
   margin: 0;
   font-size: 1.2rem;
-  color: #2c3e50;
+  color: white;
 }
 
 .close-modal-btn {
   background: none;
   border: none;
   font-size: 1.5rem;
-  color: #666;
+  color: white;
   cursor: pointer;
   padding: 0.5rem;
   line-height: 1;
 }
 
 .close-modal-btn:hover {
-  color: #333;
+  color: #d3d3d3;
 }
 
 .file-info-bar {
-  padding: 0.75rem 1.5rem;
-  background: #f8f9fa;
+  padding: 1rem 1.5rem;
+  background: #f8fafc;
   border-bottom: 1px solid #eee;
   display: flex;
-  gap: 1.5rem;
-  font-size: 0.9rem;
-  color: #666;
+  gap: 2rem;
+  flex-wrap: wrap;
 }
 
 .file-content-viewer {
   flex: 1;
-  padding: 1.5rem;
+  padding: 2rem;
   overflow-y: auto;
+  background: #fafafa;
 }
 
 .file-content-viewer pre {
   margin: 0;
   white-space: pre-wrap;
   word-wrap: break-word;
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 1rem;
-  line-height: 1.5;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  line-height: 1.6;
+  padding: 1rem;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #edf2f7;
+}
+
+/* 美化创建文件表单 */
+.card h3 {
+  font-size: 1.5rem;
+  color: #2c3e50;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #edf2f7;
+}
+
+/* 添加动画效果 */
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.3s;
+}
+
+.fade-enter, .fade-leave-to {
+  opacity: 0;
 }
 </style> 
